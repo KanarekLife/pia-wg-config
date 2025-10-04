@@ -4,6 +4,8 @@ A fast, portable Wireguard config generator for Private Internet Access (PIA) VP
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/kylegrantlucas/pia-wg-config)](https://golang.org/doc/devel/release.html)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/kanareklife/pia-wg-config)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/KanarekLife/pia-wg-config/cicd.yml?branch=main)](https://github.com/KanarekLife/pia-wg-config/actions)
 
 ## 🌍 Region Selection (NOT Hardcoded!)
 
@@ -50,6 +52,38 @@ pia-wg-config -o wg0.conf -r de_frankfurt USERNAME PASSWORD
 # Enable verbose output
 pia-wg-config -v -r japan USERNAME PASSWORD
 ```
+
+### Docker Usage
+
+Pre-built Docker images are available on GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/kanareklife/pia-wg-config:latest
+
+# Generate config for default region
+docker run --rm ghcr.io/kanareklife/pia-wg-config:latest USERNAME PASSWORD
+
+# Generate config for specific region
+docker run --rm ghcr.io/kanareklife/pia-wg-config:latest -r uk_london USERNAME PASSWORD
+
+# Save config to host file
+mkdir -p ./configs
+docker run --rm -v $(pwd)/configs:/output \
+  ghcr.io/kanareklife/pia-wg-config:latest \
+  -r de_frankfurt -o /output/germany.conf USERNAME PASSWORD
+
+# List available regions
+docker run --rm ghcr.io/kanareklife/pia-wg-config:latest regions
+```
+
+**Docker Image Features:**
+- 🔒 **Ultra-secure**: Distroless base, runs as non-root
+- 📦 **Minimal size**: ~5-10MB total image size
+- 🌍 **Multi-architecture**: AMD64 and ARM64 support
+- ⚡ **Fast**: Direct binary execution, no overhead
+
+See [docker/README.md](docker/README.md) for detailed Docker usage instructions.
 
 ## 📖 Command Reference
 
