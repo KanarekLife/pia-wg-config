@@ -7,6 +7,12 @@ MAIN_PACKAGE=.
 VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS=-ldflags "-X main.version=$(VERSION)"
 
+# Docker variables
+DOCKER_IMAGE=pia-wg-config
+DOCKER_TAG=$(VERSION)
+DOCKER_LATEST=latest
+DOCKERFILE_PATH=docker/Dockerfile
+
 # Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
@@ -19,7 +25,7 @@ GOLINT=golint
 GOVET=$(GOCMD) vet
 
 # Build targets
-.PHONY: all build clean test coverage lint fmt vet check install uninstall deps tidy help
+.PHONY: all build clean test coverage lint fmt vet check install uninstall deps tidy help docker-build docker-build-multiarch docker-build-no-cache docker-clean clean-all
 
 # Default target
 all: check build
@@ -36,6 +42,7 @@ build-all: build-linux build-darwin build-windows
 build-linux:
 	@echo "Building for Linux..."
 	GOOS=linux GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 $(MAIN_PACKAGE)
+	GOOS=linux GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 $(MAIN_PACKAGE)
 
 build-darwin:
 	@echo "Building for macOS..."
@@ -45,6 +52,42 @@ build-darwin:
 build-windows:
 	@echo "Building for Windows..."
 	GOOS=windows GOARCH=amd64 $(GOBUILD) $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe $(MAIN_PACKAGE)
+	GOOS=windows GOARCH=arm64 $(GOBUILD) $(LDFLAGS) -o $(BINARY_NAME)-windows-arm64.exe $(MAIN_PACKAGE)
+
+# Docker targets
+docker-build:
+	@echo "Building Docker image $(DOCKER_IMAGE):$(DOCKER_TAG)..."
+	docker build -f $(DOCKERFILE_PATH) \
+		--build-arg VERSION=$(VERSION) \
+		-t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(DOCKER_IMAGE):$(DOCKER_LATEST)
+	@echo "✓ Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+	@echo "✓ Docker image tagged: $(DOCKER_IMAGE):$(DOCKER_LATEST)"
+
+docker-build-multiarch:
+	@echo "Building multi-architecture Docker image $(DOCKER_IMAGE):$(DOCKER_TAG)..."
+	docker buildx create --use --name multiarch-builder 2>/dev/null || true
+	docker buildx build -f $(DOCKERFILE_PATH) \
+		--platform linux/amd64,linux/arm64 \
+		--build-arg VERSION=$(VERSION) \
+		-t $(DOCKER_IMAGE):$(DOCKER_TAG) \
+		-t $(DOCKER_IMAGE):$(DOCKER_LATEST) \
+		.
+	@echo "✓ Multi-architecture Docker images built and pushed"
+
+docker-build-no-cache:
+	@echo "Building Docker image $(DOCKER_IMAGE):$(DOCKER_TAG) without cache..."
+	docker build --no-cache -f $(DOCKERFILE_PATH) \
+		--build-arg VERSION=$(VERSION) \
+		-t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(DOCKER_IMAGE):$(DOCKER_LATEST)
+	@echo "✓ Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+
+docker-clean:
+	@echo "Cleaning Docker images..."
+	-docker rmi $(DOCKER_IMAGE):$(DOCKER_TAG) 2>/dev/null || true
+	-docker rmi $(DOCKER_IMAGE):$(DOCKER_LATEST) 2>/dev/null || true
+	@echo "✓ Docker images cleaned"
 
 # Clean build artifacts
 clean:
@@ -53,6 +96,10 @@ clean:
 	rm -f $(BINARY_NAME)
 	rm -f $(BINARY_NAME)-*
 	@echo "✓ Clean complete"
+
+# Clean everything including Docker images
+clean-all: clean docker-clean
+	@echo "✓ All artifacts cleaned"
 
 # Run tests
 test:
@@ -147,21 +194,40 @@ version:
 # Show help
 help:
 	@echo "Available targets:"
+	@echo ""
+	@echo "Build targets:"
 	@echo "  build        - Build the binary"
 	@echo "  build-all    - Build for all platforms"
 	@echo "  clean        - Clean build artifacts"
+	@echo "  clean-all    - Clean all artifacts including Docker images"
+	@echo ""
+	@echo "Docker targets:"
+	@echo "  docker-build - Build Docker image"
+	@echo "  docker-build-multiarch - Build multi-architecture image (amd64/arm64)"
+	@echo "  docker-build-no-cache - Build Docker image without cache"
+	@echo "  docker-clean - Remove Docker images"
+	@echo ""
+	@echo "Test targets:"
 	@echo "  test         - Run tests"
 	@echo "  coverage     - Run tests with coverage"
+	@echo "  test-regions - Test the regions command"
+	@echo ""
+	@echo "Code quality:"
 	@echo "  fmt          - Format code"
 	@echo "  lint         - Lint code"
 	@echo "  vet          - Vet code"
 	@echo "  check        - Run all checks (fmt, vet, lint, test)"
+	@echo ""
+	@echo "Dependencies:"
 	@echo "  deps         - Install dependencies"
 	@echo "  tidy         - Tidy dependencies"
+	@echo ""
+	@echo "Installation:"
 	@echo "  install      - Install binary to GOPATH/bin"
 	@echo "  uninstall    - Remove binary from GOPATH/bin"
+	@echo ""
+	@echo "Development:"
 	@echo "  dev-setup    - Set up development environment"
-	@echo "  test-regions - Test the regions command"
 	@echo "  release-check- Prepare and check release artifacts"
 	@echo "  version      - Show version"
 	@echo "  help         - Show this help"
