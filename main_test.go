@@ -22,8 +22,10 @@ func TestWriteServerNameFile(t *testing.T) {
 		t.Fatalf("failed to read servername file: %v", err)
 	}
 
-	if string(data) != serverName {
-		t.Fatalf("unexpected servername content: got %q want %q", string(data), serverName)
+	// The file is written in .env-like format: SERVER_NAME=<server name>\n
+	expected := "SERVER_NAME=" + serverName + "\n"
+	if string(data) != expected {
+		t.Fatalf("unexpected servername content: got %q want %q", string(data), expected)
 	}
 
 	// Check permissions are 0600-ish: owner readable/writable

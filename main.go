@@ -164,9 +164,10 @@ func defaultAction(c *cli.Context) error {
 
 func writeServerNameFile(outfile, s string) error {
 	// writeServerNameFile writes the PIA server Common Name to a separate
-	// file next to the generated Wireguard config. The companion file is
-	// named OUTFILE.servername and is created with mode 0600 to limit access.
-	return os.WriteFile(outfile+".servername", []byte(s), 0600)
+	// file next to the generated Wireguard config in .env format:
+	// SERVER_NAME=<server name>
+	content := fmt.Sprintf("SERVER_NAME=%s\n", s)
+	return os.WriteFile(outfile+".servername", []byte(content), 0600)
 }
 
 func listRegions(c *cli.Context) error {
