@@ -43,11 +43,10 @@ func main() {
 				Value:   false,
 				Usage:   "Print verbose output",
 			},
-			&cli.BoolFlag{
-				Name:    "generate-servername-file",
-				Aliases: []string{"gsf"},
-				Value:   false,
-				Usage:   "Generate a file with the server name used in the config",
+			&cli.StringFlag{
+				Name:    "servername-file",
+				Aliases: []string{"sn"},
+				Usage:   "Write the server name to this file path (creates file as given)",
 			},
 		},
 	}
@@ -80,7 +79,7 @@ func defaultAction(c *cli.Context) error {
 	password := c.Args().Get(1)
 	verbose := c.Bool("verbose")
 	region := c.String("region")
-	generateServerNameFile := c.Bool("generate-servername-file")
+	servernameFile := c.String("servername-file")
 
 	if username == "" || password == "" {
 		return cli.Exit("Error: Username and password cannot be empty", 1)
@@ -139,17 +138,16 @@ func defaultAction(c *cli.Context) error {
 		if verbose {
 			log.Printf("Wireguard config written to: %s", outfile)
 		}
-		if generateServerNameFile {
-			// Create companion file containing only the server name (Common Name)
-			// This is useful for workflows that need the PIA server CN separately
-			// from the Wireguard config. The file is written as OUTFILE.servername
-			// with permissions 0600.
-			err = writeServerNameFile(outfile, result.ServerName)
+		if servernameFile != "" {
+			// Write the server name to the explicitly provided path. This allows
+			// callers to control where the server name companion file is placed
+			// independently of the wg config output file.
+			err = writeServerNameFile(servernameFile, result.ServerName)
 			if err != nil {
 				return cli.Exit(fmt.Sprintf("Error: Failed to write server name file: %v", err), 1)
 			}
 			if verbose {
-				log.Printf("Server name file written to: %s.servername", outfile)
+				log.Printf("Server name file written to: %s", servernameFile)
 			}
 		}
 		fmt.Printf("✓ Wireguard config generated successfully: %s\n", outfile)
@@ -164,10 +162,9 @@ func defaultAction(c *cli.Context) error {
 
 func writeServerNameFile(outfile, s string) error {
 	// writeServerNameFile writes the PIA server Common Name to a separate
-	// file next to the generated Wireguard config in .env format:
-	// SERVER_NAME=<server name>
+	// file in .env format: SERVER_NAME=<server name>
 	content := fmt.Sprintf("SERVER_NAME=%s\n", s)
-	return os.WriteFile(outfile+".servername", []byte(content), 0600)
+	return os.WriteFile(outfile, []byte(content), 0600)
 }
 
 func listRegions(c *cli.Context) error {

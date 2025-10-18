@@ -8,7 +8,7 @@ import (
 func TestWriteServerNameFile(t *testing.T) {
 	outfile := "test-wg.conf"
 	defer os.Remove(outfile)
-	defer os.Remove(outfile + ".servername")
+	defer os.Remove(outfile)
 
 	serverName := "us_california-lax.pia.privateinternetaccess.com"
 
@@ -17,7 +17,7 @@ func TestWriteServerNameFile(t *testing.T) {
 	}
 
 	// Read back the file
-	data, err := os.ReadFile(outfile + ".servername")
+	data, err := os.ReadFile(outfile)
 	if err != nil {
 		t.Fatalf("failed to read servername file: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestWriteServerNameFile(t *testing.T) {
 	}
 
 	// Check permissions are 0600-ish: owner readable/writable
-	fi, err := os.Stat(outfile + ".servername")
+	fi, err := os.Stat(outfile)
 	if err != nil {
 		t.Fatalf("stat failed: %v", err)
 	}

@@ -19,23 +19,24 @@ pia-wg-config -r au_sydney USERNAME PASSWORD
 pia-wg-config -r japan USERNAME PASSWORD
 ```
 
-### Server name companion file (generate-servername-file)
+### Server name companion file (servername-file)
 
-When generating a Wireguard configuration file you may also want a small companion file that
-contains the server name (Common Name) that PIA used for the connection. This tool provides
-the `--generate-servername-file` (alias `-gsf`) flag which, when used with `-o OUTFILE`, will
-create an additional file named `OUTFILE.servername` containing the server name as plain text.
+When generating a Wireguard configuration you may want a small file that contains the
+server name (Common Name) that PIA used for the connection. Instead of enabling this via
+a boolean flag, you now provide the desired output path using the `--servername-file`
+flag (alias `-sn`). When provided the tool will write a small `.env`-like file to the
+path you specify containing the line `SERVER_NAME=<server name>`.
 
 Example:
 
 ```bash
-pia-wg-config -o wg0.conf --generate-servername-file USERNAME PASSWORD
+pia-wg-config -o wg0.conf --servername-file wg0.servername USERNAME PASSWORD
 ```
 
 This will produce two files:
 
 - `wg0.conf` — the Wireguard configuration
-- `wg0.conf.servername` — a tiny file containing the PIA server name used in the config
+- `wg0.servername` — a tiny file containing the PIA server name used in the config
 
 The server name file is created with file mode 0600 to restrict access.
 
@@ -121,6 +122,7 @@ pia-wg-config [OPTIONS] USERNAME PASSWORD
 - `-r, --region` - Region to connect to (default: "us_california")
 - `-o, --outfile` - Output file for the config (default: stdout)
 - `-v, --verbose` - Enable verbose output
+- `--servername-file` - Write server name companion file to this path (creates file with SERVER_NAME=<name>)
 - `-h, --help` - Show help
 
 ### Subcommands
