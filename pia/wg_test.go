@@ -63,8 +63,8 @@ PersistentKeepalive = 25`,
 				t.Errorf("PIAWgGenerator.Generate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("PIAWgGenerator.Generate() = %v, want %v", got, tt.want)
+			if got.Config != tt.want {
+				t.Errorf("PIAWgGenerator.Generate() = %v, want %v", got.Config, tt.want)
 			}
 		})
 	}

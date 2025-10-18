@@ -49,6 +49,7 @@ Thumbs.db
 # Config files that might contain credentials
 *.conf
 wg*.conf
+wg*.conf.servername
 test-configs/
 
 # Environment files

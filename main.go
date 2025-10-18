@@ -43,6 +43,12 @@ func main() {
 				Value:   false,
 				Usage:   "Print verbose output",
 			},
+			&cli.BoolFlag{
+				Name:    "generate-servername-file",
+				Aliases: []string{"gsf"},
+				Value:   false,
+				Usage:   "Generate a file with the server name used in the config",
+			},
 		},
 	}
 
@@ -74,6 +80,7 @@ func defaultAction(c *cli.Context) error {
 	password := c.Args().Get(1)
 	verbose := c.Bool("verbose")
 	region := c.String("region")
+	generateServerNameFile := c.Bool("generate-servername-file")
 
 	if username == "" || password == "" {
 		return cli.Exit("Error: Username and password cannot be empty", 1)
@@ -108,7 +115,7 @@ func defaultAction(c *cli.Context) error {
 	if verbose {
 		log.Print("Generating wireguard config")
 	}
-	config, err := wgConfigGenerator.Generate()
+	result, err := wgConfigGenerator.Generate()
 	if err != nil {
 		if verbose {
 			log.Printf("Failed to generate config: %v", err)
@@ -125,21 +132,41 @@ func defaultAction(c *cli.Context) error {
 	outfile := c.String("outfile")
 	if outfile != "" {
 		// write config to file
-		err = os.WriteFile(outfile, []byte(config), 0600) // More secure permissions
+		err = os.WriteFile(outfile, []byte(result.Config), 0600) // More secure permissions
 		if err != nil {
 			return cli.Exit(fmt.Sprintf("Error: Failed to write config to file '%s': %v", outfile, err), 1)
 		}
 		if verbose {
 			log.Printf("Wireguard config written to: %s", outfile)
 		}
+		if generateServerNameFile {
+			// Create companion file containing only the server name (Common Name)
+			// This is useful for workflows that need the PIA server CN separately
+			// from the Wireguard config. The file is written as OUTFILE.servername
+			// with permissions 0600.
+			err = writeServerNameFile(outfile, result.ServerName)
+			if err != nil {
+				return cli.Exit(fmt.Sprintf("Error: Failed to write server name file: %v", err), 1)
+			}
+			if verbose {
+				log.Printf("Server name file written to: %s.servername", outfile)
+			}
+		}
 		fmt.Printf("✓ Wireguard config generated successfully: %s\n", outfile)
 		fmt.Printf("You can now connect using: sudo wg-quick up %s\n", outfile)
 	} else {
 		// print config to stdout
-		fmt.Println(config)
+		fmt.Println(result.Config)
 	}
 
 	return nil
+}
+
+func writeServerNameFile(outfile, s string) error {
+	// writeServerNameFile writes the PIA server Common Name to a separate
+	// file next to the generated Wireguard config. The companion file is
+	// named OUTFILE.servername and is created with mode 0600 to limit access.
+	return os.WriteFile(outfile+".servername", []byte(s), 0600)
 }
 
 func listRegions(c *cli.Context) error {

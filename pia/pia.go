@@ -54,14 +54,15 @@ type piaServerList struct {
 }
 
 type AddKeyResult struct {
-	Status     string   `json:"status"`
-	ServerKey  string   `json:"server_key"`
-	ServerPort int      `json:"server_port"`
-	ServerIP   string   `json:"server_ip"`
-	ServerVip  string   `json:"server_vip"`
-	PeerIP     string   `json:"peer_ip"`
-	PeerPubkey string   `json:"peer_pubkey"`
-	DNSServers []string `json:"dns_servers"`
+	Status       string   `json:"status"`
+	ServerKey    string   `json:"server_key"`
+	ServerPort   int      `json:"server_port"`
+	ServerIP     string   `json:"server_ip"`
+	ServerVip    string   `json:"server_vip"`
+	PeerIP       string   `json:"peer_ip"`
+	PeerPubkey   string   `json:"peer_pubkey"`
+	DNSServers   []string `json:"dns_servers"`
+	CNServerName string   `json:"cn_server_name"`
 }
 
 type Server struct {
@@ -150,6 +151,8 @@ func (p *PIAClient) AddKey(token, publickey string) (AddKeyResult, error) {
 
 	// Build http request
 	url := fmt.Sprintf("https://%v:1337/addKey?pt=%v&pubkey=%v", server.Cn, url.QueryEscape(token), url.QueryEscape(publickey))
+
+	addKeyResp.CNServerName = server.Cn
 
 	// Send request
 	resp, err := p.executePIARequest(server, url, token)
