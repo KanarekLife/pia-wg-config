@@ -43,6 +43,12 @@ func main() {
 				Value:   false,
 				Usage:   "Print verbose output",
 			},
+			&cli.BoolFlag{
+				Name:    "debug",
+				Aliases: []string{"d"},
+				Value:   false,
+				Usage:   "Print debug output including file contents before writing",
+			},
 			&cli.StringFlag{
 				Name:    "servername-file",
 				Aliases: []string{"sn"},
@@ -78,6 +84,7 @@ func defaultAction(c *cli.Context) error {
 	username := c.Args().Get(0)
 	password := c.Args().Get(1)
 	verbose := c.Bool("verbose")
+	debug := c.Bool("debug")
 	region := c.String("region")
 	servernameFile := c.String("servername-file")
 
@@ -130,6 +137,13 @@ func defaultAction(c *cli.Context) error {
 
 	outfile := c.String("outfile")
 	if outfile != "" {
+		// Debug: print config content before writing
+		if debug {
+			fmt.Println("=== DEBUG: WireGuard Config Content ===")
+			fmt.Println(result.Config)
+			fmt.Println("=== END DEBUG ===")
+		}
+		
 		// write config to file
 		err = os.WriteFile(outfile, []byte(result.Config), 0600) // More secure permissions
 		if err != nil {
@@ -146,6 +160,14 @@ func defaultAction(c *cli.Context) error {
 			if err != nil {
 				return cli.Exit(fmt.Sprintf("Error: Failed to write server name file: %v", err), 1)
 			}
+			
+			// Debug: print server name file content before writing
+			if debug {
+				fmt.Println("=== DEBUG: Server Name File Content ===")
+				fmt.Printf("SERVER_NAME=%s\n", result.ServerName)
+				fmt.Println("=== END DEBUG ===")
+			}
+			
 			if verbose {
 				log.Printf("Server name file written to: %s", servernameFile)
 			}
