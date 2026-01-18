@@ -147,11 +147,11 @@ func (p *PIAWgGenerator) generateConfig(key AddKeyResult, privatekey string) (st
 }
 
 var wireguardConfigTemplate = `[Interface]
-PrivateKey = {{.PrivateKey}}
-Address = {{.Address}}
-DNS = {{.DNS}}
+PrivateKey='{{.PrivateKey}}'
+Address='{{.Address}}'
+DNS='{{.DNS}}'
 [Peer]
-PublicKey = {{.PublicKey}}
-AllowedIPs = {{.AllowedIPs}}
-Endpoint = {{.Endpoint}}:1337
-PersistentKeepalive = {{.PersistentKeepalive}}`
+PublicKey='{{.PublicKey}}'
+AllowedIPs='{{.AllowedIPs}}'
+Endpoint='{{.Endpoint}}:1337'
+PersistentKeepalive='{{.PersistentKeepalive}}'`

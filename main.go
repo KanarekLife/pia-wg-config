@@ -184,8 +184,8 @@ func defaultAction(c *cli.Context) error {
 
 func writeServerNameFile(outfile, s string) error {
 	// writeServerNameFile writes the PIA server Common Name to a separate
-	// file in .env format: SERVER_NAME=<server name>
-	content := fmt.Sprintf("SERVER_NAME=%s\n", s)
+	// file in .env format: SERVER_NAME='<server name>'
+	content := fmt.Sprintf("SERVER_NAME='%s'\n", s)
 	return os.WriteFile(outfile, []byte(content), 0600)
 }
 
