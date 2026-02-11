@@ -143,7 +143,7 @@ func defaultAction(c *cli.Context) error {
 			fmt.Println(result.Config)
 			fmt.Println("=== END DEBUG ===")
 		}
-		
+
 		// write config to file
 		err = os.WriteFile(outfile, []byte(result.Config), 0600) // More secure permissions
 		if err != nil {
@@ -160,14 +160,14 @@ func defaultAction(c *cli.Context) error {
 			if err != nil {
 				return cli.Exit(fmt.Sprintf("Error: Failed to write server name file: %v", err), 1)
 			}
-			
+
 			// Debug: print server name file content before writing
 			if debug {
 				fmt.Println("=== DEBUG: Server Name File Content ===")
 				fmt.Printf("SERVER_NAME=%s\n", result.ServerName)
 				fmt.Println("=== END DEBUG ===")
 			}
-			
+
 			if verbose {
 				log.Printf("Server name file written to: %s", servernameFile)
 			}

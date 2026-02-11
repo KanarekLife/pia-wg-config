@@ -102,24 +102,44 @@ func NewPIAClient(username, password, region string, verbose bool) (*PIAClient, 
 }
 
 // GetToken
+// Patch taken from PR: https://github.com/kylegrantlucas/pia-wg-config/issues/12
 func (p *PIAClient) GetToken() (string, error) {
-	server := p.getMetadataServerForRegion()
-	url := fmt.Sprintf("https://%v/authv3/generateToken", server.Cn)
+	tokenURL := "https://www.privateinternetaccess.com/api/client/v2/token"
 
-	// Send request
-	resp, err := p.executePIARequest(server, url, "")
-	if err != nil {
-		return "", errors.Wrap(err, "error executing request")
+	formData := url.Values{}
+	formData.Set("username", p.username)
+	formData.Set("password", p.password)
+
+	if p.verbose {
+		log.Print("Requesting token from central PIA API")
 	}
 
-	// Parse response
+	resp, err := http.PostForm(tokenURL, formData)
+	if err != nil {
+		return "", errors.Wrap(err, "error requesting token from PIA API")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "error reading token response")
+	}
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("token request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
 	var tokenResp struct {
 		Token string `json:"token"`
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&tokenResp)
+	err = json.Unmarshal(body, &tokenResp)
 	if err != nil {
 		return "", errors.Wrap(err, "error decoding token response")
+	}
+
+	if tokenResp.Token == "" {
+		return "", errors.New("received empty token from PIA API")
 	}
 
 	if p.verbose {
