@@ -54,6 +54,10 @@ func main() {
 				Aliases: []string{"sn"},
 				Usage:   "Write the server name to this file path (creates file as given)",
 			},
+			&cli.BoolFlag{
+				Name:  "skip-if-present",
+				Usage: "Skip generation if the output file(s) already exist",
+			},
 		},
 	}
 
@@ -63,7 +67,32 @@ func main() {
 }
 
 func defaultAction(c *cli.Context) error {
-	// Validate arguments
+	outfile := c.String("outfile")
+	servernameFile := c.String("servername-file")
+	skipIfPresent := c.Bool("skip-if-present")
+	verbose := c.Bool("verbose")
+
+	if skipIfPresent && outfile != "" {
+		filesExist := false
+
+		if _, err := os.Stat(outfile); err == nil {
+			filesExist = true
+		}
+
+		if filesExist && servernameFile != "" {
+			if _, err := os.Stat(servernameFile); os.IsNotExist(err) {
+				filesExist = false
+			}
+		}
+
+		if filesExist {
+			if verbose {
+				log.Printf("Output file(s) already present (%s), skipping generation.", outfile)
+			}
+			return nil
+		}
+	}
+
 	if c.NArg() < 2 {
 		fmt.Println("Error: Username and password are required")
 		fmt.Println()
@@ -83,10 +112,8 @@ func defaultAction(c *cli.Context) error {
 	// get username and password
 	username := c.Args().Get(0)
 	password := c.Args().Get(1)
-	verbose := c.Bool("verbose")
 	debug := c.Bool("debug")
 	region := c.String("region")
-	servernameFile := c.String("servername-file")
 
 	if username == "" || password == "" {
 		return cli.Exit("Error: Username and password cannot be empty", 1)
@@ -135,7 +162,6 @@ func defaultAction(c *cli.Context) error {
 		return cli.Exit("", 1)
 	}
 
-	outfile := c.String("outfile")
 	if outfile != "" {
 		// Debug: print config content before writing
 		if debug {
